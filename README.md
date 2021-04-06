@@ -1,1 +1,2 @@
 # Elektra
+![Screenshot](Screenshot.png)
