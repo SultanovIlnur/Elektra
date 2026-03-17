@@ -140,8 +140,10 @@ public class FPSController : MonoBehaviour
                             {
                                 Vector3 hitTransformPlace = hit.transform.position;
                                 Vector3 hitNormal = hit.normal;
-                                cubesScript.PlaceItem(hitTransformPlace + hitNormal, currentItemID);
-                                inventoryScript.DeleteItem(inventoryScript.ActivePanel, 1);
+                                if (cubesScript.PlaceItem(hitTransformPlace + hitNormal, currentItemID))
+                                {
+                                    inventoryScript.DeleteItem(inventoryScript.ActivePanel, 1);
+                                }
                             }
                         }
                     }

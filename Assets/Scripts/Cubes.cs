@@ -30,10 +30,16 @@ public class Cubes : MonoBehaviour
 
         //transform.position += transform.TransformDirection(transform.position);
     }
-    public void PlaceItem(Vector3 coords, int itemID)
+    public bool PlaceItem(Vector3 coords, int itemID)
     {
         GameObject currentItem = Resources.Load<GameObject>($"Items/{itemID}");
-        Instantiate(currentItem, coords, Quaternion.identity, transform);
+        if (currentItem == null)
+        {
+            return false;
+        }
+
+        GameObject placedItem = Instantiate(currentItem, coords, Quaternion.identity, transform);
+        return placedItem != null;
     }
 
 
