@@ -145,29 +145,15 @@ public class FPSController : MonoBehaviour
         {
             if (Physics.Raycast(ray, out hit, maxBuildAndDestroyDistance))
             {
-                if (inventory.GetComponent<Inventory>().inventoryItemArray[inventory.GetComponent<Inventory>().ActivePanel] != null)
-                {
-                    InventoryItem currentInventoryItem = inventory.GetComponent<Inventory>().inventoryItemArray[inventory.GetComponent<Inventory>().ActivePanel];
-                }
                 GameObject currentRayItem = hit.transform.gameObject;
                 if (currentRayItem.GetComponent<Item>() != null)
                 {
                     if (currentRayItem.GetComponent<Item>().ItemType == 0)
                     {
-                        if (inventory.GetComponent<Inventory>().inventoryItemArray[inventory.GetComponent<Inventory>().ActivePanel] != null)
-                        {
-                            if (inventory.GetComponent<Inventory>().inventoryItemArray[inventory.GetComponent<Inventory>().ActivePanel].ItemID == currentRayItem.GetComponent<Item>().ItemID)
-                            {
-                                GameObject hitTransform = hit.transform.gameObject;
-                                Destroy(hitTransform);
-                                inventory.GetComponent<Inventory>().AddItem(currentRayItem.GetComponent<Item>().ItemID, inventory.GetComponent<Inventory>().ActivePanel, 1);
-                            }
-                        }
-                        else
+                        if (inventoryScript.TryAddItem(currentRayItem.GetComponent<Item>().ItemID, 1))
                         {
                             GameObject hitTransform = hit.transform.gameObject;
                             Destroy(hitTransform);
-                            inventory.GetComponent<Inventory>().AddItem(currentRayItem.GetComponent<Item>().ItemID, inventory.GetComponent<Inventory>().ActivePanel, 1);
                         }
 
                     }

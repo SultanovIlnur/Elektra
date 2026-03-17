@@ -5,11 +5,11 @@ using UnityEngine;
 public class Upgrade : MonoBehaviour
 {
     [SerializeField]
-    private int[] ItemIDArray;
+    private int[] ItemIDArray = new int[0];
     [SerializeField]
-    private int[] ItemCountNeedArray;
+    private int[] ItemCountNeedArray = new int[0];
     [SerializeField]
-    private int[] ItemCountStoredArray;
+    private int[] ItemCountStoredArray = new int[0];
     
     private int actionType = 0;
 
@@ -19,7 +19,9 @@ public class Upgrade : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        itemsCount = ItemIDArray.Length;
+        EnsureUpgradeArrays();
+        itemsCount = Mathf.Min(ItemIDArray.Length, ItemCountNeedArray.Length);
+        itemsCount = Mathf.Min(itemsCount, ItemCountStoredArray.Length);
     }
 
     // Update is called once per frame
@@ -37,9 +39,30 @@ public class Upgrade : MonoBehaviour
             }
         }*/
     }
+
+    void EnsureUpgradeArrays()
+    {
+        if (ItemIDArray == null)
+        {
+            ItemIDArray = new int[0];
+        }
+
+        if (ItemCountNeedArray == null)
+        {
+            ItemCountNeedArray = new int[0];
+        }
+
+        if (ItemCountStoredArray == null)
+        {
+            ItemCountStoredArray = new int[0];
+        }
+    }
+
     bool CheckIsFilled(int itemSlotNumber)
     {
-        if (itemSlotNumber < ItemCountStoredArray.Length)
+        EnsureUpgradeArrays();
+
+        if (itemSlotNumber >= 0 && itemSlotNumber < itemsCount)
         {
             if (ItemCountStoredArray[itemSlotNumber] == ItemCountNeedArray[itemSlotNumber])
             {

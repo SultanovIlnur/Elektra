@@ -20,7 +20,6 @@ public class Inventory : MonoBehaviour
             activePanel = value;
         }
     }
-    int ignorePanel;
     bool isPanelEmpty;
     GameObject[] panels = new GameObject[9];
     Image[] panelsColor = new Image[9];
@@ -61,12 +60,23 @@ public class Inventory : MonoBehaviour
         }
 
         activePanel = 0;
-        ignorePanel = 0;
         for (int i = 0; i < 9; i++)
         {
             panels[i] = GameObject.Find($"GuiCanvas/InvPanel/{i + 1}");
             panelsColor[i] = panels[i].GetComponent<Image>();
             panelImages[i] = GameObject.Find($"GuiCanvas/InvPanel/{i + 1}/Image").GetComponent<Image>();
+        }
+
+        SetActivePanel(0);
+    }
+
+    void SetActivePanel(int newActivePanel)
+    {
+        activePanel = newActivePanel;
+
+        for (int i = 0; i < panelsColor.Length; i++)
+        {
+            panelsColor[i].color = i == activePanel ? selectedColor : unselectedColor;
         }
     }
 
@@ -79,21 +89,8 @@ public class Inventory : MonoBehaviour
         {
             if (Input.GetKeyDown($"{i + 1}"))
             {
-                //GameObject invPanel = GameObject.Find($"GuiCanvas/InvPanel/{i}");
-                //invPanel.GetComponent<Image>().color = selectedColor;
-                panelsColor[i].color = selectedColor;
-                activePanel = i;
-                ignorePanel = i;
-            }
-            else
-            {
-                if (i != ignorePanel)
-                {
-                    //GameObject invPanel = GameObject.Find($GuiCanvas/InvPanel/{i}");
-                    //invPanel.GetComponent<Image>().color = unselectedColor;
-                    panelsColor[i].color = unselectedColor;
-
-                }
+                SetActivePanel(i);
+                break;
             }
         }
 
@@ -105,9 +102,7 @@ public class Inventory : MonoBehaviour
             {
                 newActivePanel = 8;
             }
-            panelsColor[newActivePanel].color = selectedColor;
-            activePanel = newActivePanel;
-            ignorePanel = newActivePanel;
+            SetActivePanel(newActivePanel);
         }
         else if (Input.GetAxis("Mouse ScrollWheel") > 0f)
         {
@@ -116,9 +111,7 @@ public class Inventory : MonoBehaviour
             {
                 newActivePanel = 0;
             }
-            panelsColor[newActivePanel].color = selectedColor;
-            activePanel = newActivePanel;
-            ignorePanel = newActivePanel;
+            SetActivePanel(newActivePanel);
         }
 
         //кнопка для выкидывания объекта из руки
@@ -174,6 +167,35 @@ public class Inventory : MonoBehaviour
 
 
 
+    }
+
+    public bool TryAddItem(int itemID, int itemCount)
+    {
+        if (inventoryItemArray[activePanel] == null || inventoryItemArray[activePanel].ItemID == itemID)
+        {
+            AddItem(itemID, activePanel, itemCount);
+            return true;
+        }
+
+        for (int i = 0; i < inventoryItemArray.Length; i++)
+        {
+            if (inventoryItemArray[i] != null && inventoryItemArray[i].ItemID == itemID)
+            {
+                AddItem(itemID, i, itemCount);
+                return true;
+            }
+        }
+
+        for (int i = 0; i < inventoryItemArray.Length; i++)
+        {
+            if (inventoryItemArray[i] == null)
+            {
+                AddItem(itemID, i, itemCount);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void DeleteItem(int panelNumber, int itemCount)
