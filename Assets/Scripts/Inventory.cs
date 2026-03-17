@@ -147,10 +147,9 @@ public class Inventory : MonoBehaviour
 
     int GetItemMaxStack(int itemID)
     {
-        GameObject itemPrefab = Resources.Load<GameObject>($"Items/{itemID}");
-        if (itemPrefab != null && itemPrefab.GetComponent<Item>() != null)
+        if (ItemResources.TryGetItemDefinition(itemID, out Item itemDefinition))
         {
-            return Mathf.Max(1, itemPrefab.GetComponent<Item>().MaxStack);
+            return Mathf.Max(1, itemDefinition.MaxStack);
         }
 
         return 1;
@@ -265,14 +264,12 @@ public class Inventory : MonoBehaviour
     {
         Vector3 fpsCameraPosition = fpsCamera.transform.position;
         GameObject thrownItemPrefab = Resources.Load<GameObject>("ThrownItem");
-        GameObject itemPrefab = Resources.Load<GameObject>($"Items/{currentID}");
-        if (thrownItemPrefab == null || itemPrefab == null)
+        if (thrownItemPrefab == null)
         {
             return false;
         }
 
-        Item itemScript = itemPrefab.GetComponent<Item>();
-        if (itemScript == null || itemScript.Model == null)
+        if (!ItemResources.TryGetItemDefinition(currentID, out Item itemDefinition) || itemDefinition.Model == null)
         {
             return false;
         }
@@ -287,7 +284,7 @@ public class Inventory : MonoBehaviour
 
         thrownItemScript.ImportItemStats(currentID, currentCount);
 
-        GameObject modelInstanced = Instantiate<GameObject>(itemScript.Model, thrownItemInstanced.transform);
+        GameObject modelInstanced = Instantiate<GameObject>(itemDefinition.Model, thrownItemInstanced.transform);
         modelInstanced.transform.localPosition = Vector3.zero;
         modelInstanced.transform.localRotation = Quaternion.identity;
         modelInstanced.transform.localScale *= 0.3f;
@@ -298,7 +295,14 @@ public class Inventory : MonoBehaviour
     {
         if (inventoryItemArray[ActivePanel] != null)
         {
-            itemNameText.text = Resources.Load<GameObject>($"Items/{inventoryItemArray[activePanel].ItemID}").GetComponent<Item>().ItemName;
+            if (ItemResources.TryGetItemDefinition(inventoryItemArray[activePanel].ItemID, out Item itemDefinition))
+            {
+                itemNameText.text = itemDefinition.ItemName;
+            }
+            else
+            {
+                itemNameText.text = "";
+            }
             itemCountText.text = inventoryItemArray[activePanel].ItemCount.ToString();
         }
         else
@@ -311,7 +315,14 @@ public class Inventory : MonoBehaviour
 
     void SetImageOnPanel(int currentPanel, int currentItemID)
     {
-        panelImages[currentPanel].sprite = Resources.Load<GameObject>($"Items/{currentItemID}").GetComponent<Item>().Preview;
+        if (ItemResources.TryGetItemDefinition(currentItemID, out Item itemDefinition))
+        {
+            panelImages[currentPanel].sprite = itemDefinition.Preview;
+        }
+        else
+        {
+            ClearImageOnPanel(currentPanel);
+        }
     }
 
     void ClearImageOnPanel(int currentPanel)

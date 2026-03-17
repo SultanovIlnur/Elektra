@@ -28,14 +28,15 @@ public class ThrownItem : MonoBehaviour
         currentItemID = importID;
         currentItemCount = Mathf.Max(1, importCount);
 
-        GameObject importItem = Resources.Load<GameObject>($"Items/{currentItemID}");
-        if (importItem != null && importItem.GetComponent<Item>() != null)
+        if (ItemResources.TryGetItemDefinition(currentItemID, out Item itemDefinition))
         {
-            string importItemName = importItem.GetComponent<Item>().ItemName;
-            int importItemType = importItem.GetComponent<Item>().ItemType;
-
-            currentItemName = importItemName;
-            currentItemType = importItemType;
+            currentItemName = itemDefinition.ItemName;
+            currentItemType = itemDefinition.ItemType;
+        }
+        else
+        {
+            currentItemName = "";
+            currentItemType = 0;
         }
 
     }
