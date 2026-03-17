@@ -41,9 +41,9 @@ public class Inventory : MonoBehaviour
         pickupTextPanel = GameObject.Find("GuiCanvas/PickupTextPanel");
         FillPanels();
 
-        AddItem(100, 4, 30);
-        AddItem(3, 5, 128);
-        AddItem(4, 6, 128);
+        TryAddItem(100, 1, 4);
+        TryAddItem(3, 128, 5);
+        TryAddItem(4, 128, 7);
     }
 
     // Update is called once per frame
@@ -143,59 +143,103 @@ public class Inventory : MonoBehaviour
         }
     }
 
-    public void AddItem(int itemID, int panelNumber, int itemCount)
+    int GetItemMaxStack(int itemID)
     {
-        Debug.Log($"{itemID} {panelNumber} {itemCount} {inventoryItemArray}");
+        GameObject itemPrefab = Resources.Load<GameObject>($"Items/{itemID}");
+        if (itemPrefab != null && itemPrefab.GetComponent<Item>() != null)
+        {
+            return Mathf.Max(1, itemPrefab.GetComponent<Item>().MaxStack);
+        }
+
+        return 1;
+    }
+
+    public int AddItem(int itemID, int panelNumber, int itemCount)
+    {
+        if (itemCount <= 0)
+        {
+            return 0;
+        }
+
+        int maxStack = GetItemMaxStack(itemID);
         if (inventoryItemArray[panelNumber] != null)
         {
-            Debug.Log("1");
-            if (inventoryItemArray[panelNumber].ItemCount >= 1 && inventoryItemArray[panelNumber].ItemID == itemID)
+            if (inventoryItemArray[panelNumber].ItemID != itemID)
             {
-                Debug.Log("2");
-                inventoryItemArray[panelNumber].ItemCount += itemCount;
+                return itemCount;
             }
+
+            int freeSpace = maxStack - inventoryItemArray[panelNumber].ItemCount;
+            if (freeSpace <= 0)
+            {
+                return itemCount;
+            }
+
+            int addedCount = Mathf.Min(itemCount, freeSpace);
+            inventoryItemArray[panelNumber].ItemCount += addedCount;
+            return itemCount - addedCount;
         }
-        else
-        {
-            Debug.Log("3");
-            inventoryItemArray[panelNumber] = (InventoryItem)ScriptableObject.CreateInstance("InventoryItem");
-            inventoryItemArray[panelNumber].ItemCount += itemCount;
-            inventoryItemArray[panelNumber].ItemID = itemID;
-            SetImageOnPanel(panelNumber, itemID);
-        }
 
+        inventoryItemArray[panelNumber] = (InventoryItem)ScriptableObject.CreateInstance("InventoryItem");
+        inventoryItemArray[panelNumber].ItemID = itemID;
 
+        int newStackCount = Mathf.Min(itemCount, maxStack);
+        inventoryItemArray[panelNumber].ItemCount = newStackCount;
+        SetImageOnPanel(panelNumber, itemID);
 
-
+        return itemCount - newStackCount;
     }
 
     public bool TryAddItem(int itemID, int itemCount)
     {
-        if (inventoryItemArray[activePanel] == null || inventoryItemArray[activePanel].ItemID == itemID)
+        return TryAddItem(itemID, itemCount, activePanel);
+    }
+
+    public bool TryAddItem(int itemID, int itemCount, int preferredPanel)
+    {
+        if (itemCount <= 0)
         {
-            AddItem(itemID, activePanel, itemCount);
             return true;
         }
 
-        for (int i = 0; i < inventoryItemArray.Length; i++)
+        if (preferredPanel < 0 || preferredPanel >= inventoryItemArray.Length)
         {
-            if (inventoryItemArray[i] != null && inventoryItemArray[i].ItemID == itemID)
+            preferredPanel = activePanel;
+        }
+
+        int remainingCount = AddItem(itemID, preferredPanel, itemCount);
+        if (remainingCount <= 0)
+        {
+            return true;
+        }
+
+        for (int i = 1; i < inventoryItemArray.Length; i++)
+        {
+            int panelIndex = (preferredPanel + i) % inventoryItemArray.Length;
+            if (inventoryItemArray[panelIndex] != null && inventoryItemArray[panelIndex].ItemID == itemID)
             {
-                AddItem(itemID, i, itemCount);
-                return true;
+                remainingCount = AddItem(itemID, panelIndex, remainingCount);
+                if (remainingCount <= 0)
+                {
+                    return true;
+                }
             }
         }
 
-        for (int i = 0; i < inventoryItemArray.Length; i++)
+        for (int i = 1; i < inventoryItemArray.Length; i++)
         {
-            if (inventoryItemArray[i] == null)
+            int panelIndex = (preferredPanel + i) % inventoryItemArray.Length;
+            if (inventoryItemArray[panelIndex] == null)
             {
-                AddItem(itemID, i, itemCount);
-                return true;
+                remainingCount = AddItem(itemID, panelIndex, remainingCount);
+                if (remainingCount <= 0)
+                {
+                    return true;
+                }
             }
         }
 
-        return false;
+        return remainingCount <= 0;
     }
 
     public void DeleteItem(int panelNumber, int itemCount)
@@ -267,34 +311,17 @@ public class Inventory : MonoBehaviour
 
     public void PickupItem(int itemID, GameObject throwItem)
     {
-        if (inventoryItemArray[activePanel] == null)
+        int itemCount = 1;
+        ThrownItem thrownItem = throwItem.GetComponent<ThrownItem>();
+        if (thrownItem != null)
         {
-            AddItem(itemID, activePanel, 1);
+            itemCount = thrownItem.currentItemCount;
+        }
+
+        if (TryAddItem(itemID, itemCount))
+        {
             Destroy(throwItem.gameObject);
         }
-        else if (inventoryItemArray[activePanel].ItemID == itemID)
-        {
-            AddItem(itemID, activePanel, 1);
-            Destroy(throwItem.gameObject);
-        }
-        else
-        {
-            for (int i = 0; i < 9; i++)
-            {
-                if (inventoryItemArray[i] == null)
-                {
-                    AddItem(itemID, i, 1);
-                    Destroy(throwItem.gameObject);
-                    break;
-                }
-                else if (inventoryItemArray[i].ItemID == itemID)
-                {
-                    AddItem(itemID, i, 1);
-                    Destroy(throwItem.gameObject);
-                    break;
-                }
-            }
-        }
-        
+
     }
 }
