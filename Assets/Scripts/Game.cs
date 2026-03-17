@@ -1,18 +1,31 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Game : MonoBehaviour
 {
-    // Start is called before the first frame update
+    private const string MainMenuSceneName = "MainMenu";
+    private const string TestWorldSceneName = "SampleScene";
+
     void Start()
     {
-        
+        Time.timeScale = 1f;
+
+        if (SceneManager.GetActiveScene().name == MainMenuSceneName)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    public void LoadTestWorld()
     {
-        
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(TestWorldSceneName);
+    }
+
+    public void QuitGame()
+    {
+        Debug.Log("Quit requested from game menu.");
+        Application.Quit();
     }
 }
