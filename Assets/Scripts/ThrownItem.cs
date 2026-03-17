@@ -23,13 +23,14 @@ public class ThrownItem : MonoBehaviour
 
     }
 
-    public void ImportItemStats(int importID)
+    public void ImportItemStats(int importID, int importCount = 1)
     {
         currentItemID = importID;
-        Debug.Log($"Current item ID {currentItemID}");
-        if (Resources.Load<GameObject>($"Items/{currentItemID}") != null)
+        currentItemCount = Mathf.Max(1, importCount);
+
+        GameObject importItem = Resources.Load<GameObject>($"Items/{currentItemID}");
+        if (importItem != null && importItem.GetComponent<Item>() != null)
         {
-            GameObject importItem = Resources.Load<GameObject>($"Items/{currentItemID}");
             string importItemName = importItem.GetComponent<Item>().ItemName;
             int importItemType = importItem.GetComponent<Item>().ItemType;
 

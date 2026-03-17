@@ -119,8 +119,10 @@ public class Inventory : MonoBehaviour
         {
             if (inventoryItemArray[activePanel] != null)
             {
-                ThrowOnGround(inventoryItemArray[activePanel].ItemID);
-                DeleteItem(activePanel, 1);
+                if (ThrowOnGround(inventoryItemArray[activePanel].ItemID, 1))
+                {
+                    DeleteItem(activePanel, 1);
+                }
 
             }
 
@@ -259,17 +261,37 @@ public class Inventory : MonoBehaviour
 
     }
     //выкинуть объект на землю
-    void ThrowOnGround(int currentID)
+    bool ThrowOnGround(int currentID, int currentCount)
     {
         Vector3 fpsCameraPosition = fpsCamera.transform.position;
-        GameObject thrownItem = Resources.Load<GameObject>("ThrownItem");
-        thrownItem.GetComponent<ThrownItem>().ImportItemStats(currentID);
-        GameObject model = Resources.Load<GameObject>($"Items/{currentID}").GetComponent<Item>().Model;
-        GameObject modelInstanced = Instantiate<GameObject>(model, Vector3.zero, Quaternion.identity);
-        GameObject thrownItemInstanced = Instantiate<GameObject>(thrownItem, fpsCameraPosition + transform.forward * 0.3f, Quaternion.identity);
-        modelInstanced.transform.parent = thrownItemInstanced.transform;
+        GameObject thrownItemPrefab = Resources.Load<GameObject>("ThrownItem");
+        GameObject itemPrefab = Resources.Load<GameObject>($"Items/{currentID}");
+        if (thrownItemPrefab == null || itemPrefab == null)
+        {
+            return false;
+        }
+
+        Item itemScript = itemPrefab.GetComponent<Item>();
+        if (itemScript == null || itemScript.Model == null)
+        {
+            return false;
+        }
+
+        GameObject thrownItemInstanced = Instantiate<GameObject>(thrownItemPrefab, fpsCameraPosition + transform.forward * 0.3f, Quaternion.identity);
+        ThrownItem thrownItemScript = thrownItemInstanced.GetComponent<ThrownItem>();
+        if (thrownItemScript == null)
+        {
+            Destroy(thrownItemInstanced);
+            return false;
+        }
+
+        thrownItemScript.ImportItemStats(currentID, currentCount);
+
+        GameObject modelInstanced = Instantiate<GameObject>(itemScript.Model, thrownItemInstanced.transform);
         modelInstanced.transform.localPosition = Vector3.zero;
+        modelInstanced.transform.localRotation = Quaternion.identity;
         modelInstanced.transform.localScale *= 0.3f;
+        return true;
     }
 
     void SetGUICurrentInfo()
