@@ -33,6 +33,7 @@ public class FPSController : MonoBehaviour
     [SerializeField]
     private GameObject inventory;
     private Inventory inventoryScript;
+    private Cubes cubesScript;
 
     /*public RaycastHit RayHit
     {
@@ -47,7 +48,8 @@ public class FPSController : MonoBehaviour
     void Start()
     {
         characterController = GetComponent<CharacterController>();
-        inventoryScript = inventory.GetComponent<Inventory>();
+        inventoryScript = inventory != null ? inventory.GetComponent<Inventory>() : null;
+        cubesScript = cubes != null ? cubes.GetComponent<Cubes>() : null;
         //Блокируем курсор
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -104,6 +106,11 @@ public class FPSController : MonoBehaviour
 
     void MakeRay()
     {
+        if (inventoryScript == null)
+        {
+            return;
+        }
+
         Vector3 point = new Vector3(playerCamera.pixelWidth / 2, playerCamera.pixelHeight / 2, 0);
         Ray ray = playerCamera.ScreenPointToRay(point);
         RaycastHit hit;
@@ -111,9 +118,9 @@ public class FPSController : MonoBehaviour
         //при нажатии левой кнопки мыши ставим блок
         if (Input.GetMouseButtonDown(1))
         {
-            if (inventory.GetComponent<Inventory>().inventoryItemArray[inventory.GetComponent<Inventory>().ActivePanel] != null)
+            InventoryItem currentInventoryItem = inventoryScript.inventoryItemArray[inventoryScript.ActivePanel];
+            if (currentInventoryItem != null)
             {
-                InventoryItem currentInventoryItem = inventory.GetComponent<Inventory>().inventoryItemArray[inventory.GetComponent<Inventory>().ActivePanel];
                 currentItemCount = currentInventoryItem.ItemCount;
                 if (currentItemCount > 0)
                 {
@@ -124,14 +131,17 @@ public class FPSController : MonoBehaviour
                         Debug.Log($"Yes, RMB {hit.collider} {hit.distance} {hit.point} {hit.transform} {hit.normal}");
                         Debug.Log(hit.transform.tag);
                         GameObject currentRayItem = hit.transform.gameObject;
-                        if (currentRayItem.GetComponent<Item>() != null)
+                        Item currentRayItemScript = currentRayItem.GetComponent<Item>();
+                        GameObject currentItemPrefab = Resources.Load<GameObject>($"Items/{currentItemID}");
+                        Item currentItemScript = currentItemPrefab != null ? currentItemPrefab.GetComponent<Item>() : null;
+                        if (currentRayItemScript != null && currentItemScript != null)
                         {
-                            if (currentRayItem.GetComponent<Item>().ItemType == 0 && Resources.Load<GameObject>($"Items/{currentItemID}").GetComponent<Item>().ItemType == 0)
+                            if (currentRayItemScript.ItemType == 0 && currentItemScript.ItemType == 0 && cubesScript != null)
                             {
                                 Vector3 hitTransformPlace = hit.transform.position;
                                 Vector3 hitNormal = hit.normal;
-                                cubes.GetComponent<Cubes>().PlaceItem(hitTransformPlace + hitNormal, currentItemID);
-                                inventory.GetComponent<Inventory>().DeleteItem(inventory.GetComponent<Inventory>().ActivePanel, 1);
+                                cubesScript.PlaceItem(hitTransformPlace + hitNormal, currentItemID);
+                                inventoryScript.DeleteItem(inventoryScript.ActivePanel, 1);
                             }
                         }
                     }
@@ -146,11 +156,12 @@ public class FPSController : MonoBehaviour
             if (Physics.Raycast(ray, out hit, maxBuildAndDestroyDistance))
             {
                 GameObject currentRayItem = hit.transform.gameObject;
-                if (currentRayItem.GetComponent<Item>() != null)
+                Item currentRayItemScript = currentRayItem.GetComponent<Item>();
+                if (currentRayItemScript != null)
                 {
-                    if (currentRayItem.GetComponent<Item>().ItemType == 0)
+                    if (currentRayItemScript.ItemType == 0)
                     {
-                        if (inventoryScript.TryAddItem(currentRayItem.GetComponent<Item>().ItemID, 1))
+                        if (inventoryScript.TryAddItem(currentRayItemScript.ItemID, 1))
                         {
                             GameObject hitTransform = hit.transform.gameObject;
                             Destroy(hitTransform);
@@ -170,15 +181,22 @@ public class FPSController : MonoBehaviour
             if (Physics.Raycast(ray, out hit, maxPickupDistance))
             {
                 GameObject currentRayItem = hit.transform.gameObject;
-                if (currentRayItem.tag == "Thrown")
+                if (currentRayItem.CompareTag("Thrown"))
                 {
                     ThrownItem thrownItemScript = currentRayItem.GetComponent<ThrownItem>();
-                    inventoryScript.OutputPickupText(thrownItemScript.currentItemID, thrownItemScript.currentItemName, thrownItemScript.currentItemCount);
-
-                    //если мы нажали f на выкинутом объекте
-                    if (Input.GetKeyDown("f"))
+                    if (thrownItemScript != null)
                     {
-                        inventoryScript.PickupItem(thrownItemScript.currentItemID, currentRayItem);
+                        inventoryScript.OutputPickupText(thrownItemScript.currentItemID, thrownItemScript.currentItemName, thrownItemScript.currentItemCount);
+
+                        //если мы нажали f на выкинутом объекте
+                        if (Input.GetKeyDown("f"))
+                        {
+                            inventoryScript.PickupItem(thrownItemScript.currentItemID, currentRayItem);
+                        }
+                    }
+                    else
+                    {
+                        inventoryScript.ClearPickupText();
                     }
                 }
                 else
